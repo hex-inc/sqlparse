@@ -412,6 +412,9 @@ def test_format_invalid_where_clause():
     formatted = sqlparse.format('where, foo', reindent=True)
     assert formatted == 'where, foo'
 
+def test_cte_named_final():
+    p = sqlparse.parse('with final as (select 1) select final')[0]
+    assert p.get_type() == 'SELECT'
 
 def test_splitting_at_and_backticks_issue588():
     splitted = sqlparse.split(
