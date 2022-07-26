@@ -271,7 +271,6 @@ KEYWORDS = {
     'FALSE': tokens.Keyword,
     'FETCH': tokens.Keyword,
     'FILE': tokens.Keyword,
-    'FINAL': tokens.Keyword,
     'FIRST': tokens.Keyword,
     'FORCE': tokens.Keyword,
     'FOREACH': tokens.Keyword,
