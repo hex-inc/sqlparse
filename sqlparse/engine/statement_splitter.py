@@ -81,7 +81,7 @@ class StatementSplitter:
         EOS_TTYPE = T.Whitespace, T.Comment.Single
 
         # Run over all stream tokens
-        for ttype, value in stream:
+        for ttype, value, position in stream:
             # Yield token if we finished a statement and there's no whitespaces
             # It will count newline token as a non whitespace. In this context
             # whitespace ignores newlines.
@@ -96,7 +96,7 @@ class StatementSplitter:
             self.level += self._change_splitlevel(ttype, value)
 
             # Append the token to the current statement
-            self.tokens.append(sql.Token(ttype, value))
+            self.tokens.append(sql.Token(ttype, value, position))
 
             # Check if we get the end of a statement
             if self.level <= 0 and ttype is T.Punctuation and value == ';':

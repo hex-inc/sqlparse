@@ -136,20 +136,20 @@ class Lexer:
                 if not m:
                     continue
                 elif isinstance(action, tokens._TokenType):
-                    yield action, m.group()
+                    yield action, m.group(), pos
                 elif action is keywords.PROCESS_AS_KEYWORD:
-                    yield self.is_keyword(m.group())
+                    yield (*self.is_keyword(m.group()), pos)
 
                 consume(iterable, m.end() - pos - 1)
                 break
             else:
-                yield tokens.Error, char
+                yield tokens.Error, char, pos
 
 
 def tokenize(sql, encoding=None):
     """Tokenize sql.
 
-    Tokenize *sql* using the :class:`Lexer` and return a 2-tuple stream
-    of ``(token type, value)`` items.
+    Tokenize *sql* using the :class:`Lexer` and return a 3-tuple stream
+    of ``(token type, value, position)`` items.
     """
     return Lexer.get_default_instance().get_tokens(sql, encoding)
