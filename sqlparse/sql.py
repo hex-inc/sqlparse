@@ -45,9 +45,9 @@ class Token:
     """
 
     __slots__ = ('value', 'ttype', 'parent', 'normalized', 'is_keyword',
-                 'is_group', 'is_whitespace')
+                 'is_group', 'is_whitespace', 'position', 'length')
 
-    def __init__(self, ttype, value):
+    def __init__(self, ttype, value, position=None):
         value = str(value)
         self.value = value
         self.ttype = ttype
@@ -56,6 +56,8 @@ class Token:
         self.is_keyword = ttype in T.Keyword
         self.is_whitespace = self.ttype in T.Whitespace
         self.normalized = value.upper() if self.is_keyword else value
+        self.position = position
+        self.length = len(value)
 
     def __str__(self):
         return self.value
@@ -160,6 +162,15 @@ class TokenList(Token):
         [setattr(token, 'parent', self) for token in self.tokens]
         super().__init__(None, str(self))
         self.is_group = True
+        if (
+            len(self.tokens) > 0
+            and self.tokens[0].position is not None
+            and self.tokens[-1].position is not None
+        ):
+            self.position = self.tokens[0].position
+            self.length = (
+                self.tokens[-1].position - self.tokens[0].position
+            ) + self.tokens[-1].length
 
     def __str__(self):
         return ''.join(token.value for token in self.flatten())
