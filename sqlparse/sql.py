@@ -47,7 +47,7 @@ class Token:
     __slots__ = ('value', 'ttype', 'parent', 'normalized', 'is_keyword',
                  'is_group', 'is_whitespace', 'position', 'length')
 
-    def __init__(self, ttype, value, position = None):
+    def __init__(self, ttype, value, position=None):
         value = str(value)
         self.value = value
         self.ttype = ttype
