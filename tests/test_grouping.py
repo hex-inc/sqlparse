@@ -324,6 +324,11 @@ def test_grouping_alias_case():
     assert p.tokens[0].get_alias() == 'foo'
 
 
+def test_grouping_alias_ctas():
+    p = sqlparse.parse('CREATE TABLE tbl1 AS SELECT coalesce(t1.col1, 0) AS col1 FROM t1')[0]
+    assert p.tokens[10].get_alias() == 'col1'
+    assert isinstance(p.tokens[10].tokens[0], sql.Function)
+
 def test_grouping_subquery_no_parens():
     # Not totally sure if this is the right approach...
     # When a THEN clause contains a subquery w/o parenthesis around it *and*
@@ -371,18 +376,8 @@ def test_grouping_function_not_in():
     # issue183
     p = sqlparse.parse('in(1, 2)')[0]
     assert len(p.tokens) == 2
-    assert p.tokens[0].ttype == T.Comparison
+    assert p.tokens[0].ttype == T.Keyword
     assert isinstance(p.tokens[1], sql.Parenthesis)
-
-
-def test_in_comparison():
-    # issue566
-    p = sqlparse.parse('a in (1, 2)')[0]
-    assert len(p.tokens) == 1
-    assert isinstance(p.tokens[0], sql.Comparison)
-    assert len(p.tokens[0].tokens) == 5
-    assert p.tokens[0].left.value == 'a'
-    assert p.tokens[0].right.value == '(1, 2)'
 
 
 def test_grouping_varchar():
@@ -655,3 +650,7 @@ def test_grouping_as_cte():
     assert p[0].get_alias() is None
     assert p[2].value == 'AS'
     assert p[4].value == 'WITH'
+
+def test_grouping_create_table():
+    p = sqlparse.parse("create table db.tbl (a string)")[0].tokens
+    assert p[4].value == "db.tbl"

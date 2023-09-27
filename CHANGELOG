@@ -1,7 +1,64 @@
 Development Version
 -------------------
 
-Nothing yet.
+Notable Changes
+
+* Drop support for Python 3.5.
+* Python 3.12 is now supported (pr725, by hugovk).
+
+Bug Fixes
+
+* Ignore dunder attributes when creating Tokens (issue672).
+
+
+Release 0.4.4 (Apr 18, 2023)
+----------------------------
+
+Notable Changes
+
+* IMPORTANT: This release fixes a security vulnerability in the
+  parser where a regular expression vulnerable to ReDOS (Regular
+  Expression Denial of Service) was used. See the security advisory
+  for details: https://github.com/andialbrecht/sqlparse/security/advisories/GHSA-rrm6-wvj7-cwh2
+  The vulnerability was discovered by @erik-krogh from GitHub
+  Security Lab (GHSL). Thanks for reporting!
+
+Bug Fixes
+
+* Revert a change from 0.4.0 that changed IN to be a comparison (issue694).
+  The primary expectation is that IN is treated as a keyword and not as a
+  comparison operator. That also follows the definition of reserved keywords
+  for the major SQL syntax definitions.
+* Fix regular expressions for string parsing.
+
+Other
+
+* sqlparse now uses pyproject.toml instead of setup.cfg (issue685).
+
+
+Release 0.4.3 (Sep 23, 2022)
+----------------------------
+
+Enhancements
+
+* Add support for DIV operator (pr664, by chezou).
+* Add support for additional SPARK keywords (pr643, by mrmasterplan).
+* Avoid tokens copy (pr622, by living180).
+* Add REGEXP as a comparision (pr647, by PeterSandwich).
+* Add DISTINCTROW keyword for MS Access (issue677).
+* Improve parsing of CREATE TABLE AS SELECT (pr662, by chezou).
+
+Bug Fixes
+
+* Fix spelling of INDICATOR keyword (pr653, by ptld).
+* Fix formatting error in EXTRACT function (issue562, issue670, pr676, by ecederstrand).
+* Fix bad parsing of create table statements that use lower case (issue217, pr642, by mrmasterplan).
+* Handle backtick as valid quote char (issue628, pr629, by codenamelxl).
+* Allow any unicode character as valid identifier name (issue641).
+
+Other
+
+* Update github actions to test on Python 3.10 as well (pr661, by cclaus).
 
 
 Release 0.4.2 (Sep 10, 2021)
