@@ -433,6 +433,10 @@ class Statement(TokenList):
         elif token.ttype in (T.Keyword.DML, T.Keyword.DDL):
             return token.normalized
 
+        # duckdb supports FROM-first syntax, PIVOT statements
+        elif token.normalized in {'FROM', 'PIVOT', 'PIVOT_WIDER', 'UNPIVOT'}:
+            return 'SELECT'
+
         elif token.ttype == T.Keyword.CTE:
             # The WITH keyword should be followed by either an Identifier or
             # an IdentifierList containing the CTE definitions;  the actual

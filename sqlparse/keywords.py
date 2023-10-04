@@ -959,14 +959,3 @@ KEYWORDS_HQL = {
 KEYWORDS_MSACCESS = {
     'DISTINCTROW': tokens.Keyword,
 }
-
-KEYWORDS_DUCKDB = {
-    # duckdb supports FROM-first syntax which may even omit the SELECT, so
-    # e.g. `from dataframe` is a full, valid query
-    'FROM': tokens.Keyword.DML,
-
-    # https://duckdb.org/docs/sql/statements/pivot
-    'PIVOT': tokens.Keyword.DML,
-    'PIVOT_WIDER': tokens.Keyword.DML,
-    'UNPIVOT': tokens.Keyword.DML,
-}
