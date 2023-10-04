@@ -57,6 +57,7 @@ class Lexer:
         Useful if you need to revert custom syntax settings."""
         self.clear()
         self.set_SQL_REGEX(keywords.SQL_REGEX)
+        self.add_keywords(keywords.KEYWORDS_DUCKDB)
         self.add_keywords(keywords.KEYWORDS_COMMON)
         self.add_keywords(keywords.KEYWORDS_ORACLE)
         self.add_keywords(keywords.KEYWORDS_PLPGSQL)
