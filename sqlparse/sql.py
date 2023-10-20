@@ -410,6 +410,8 @@ class TokenList(Token):
             elif isinstance(token, (Identifier, Function)):
                 return token.get_real_name() if real_name else token.get_name()
 
+# duckdb supports FROM-first syntax, PIVOT statements
+SELECT_LIKE = {'FROM', 'PIVOT', 'PIVOT_WIDER', 'UNPIVOT'}
 
 class Statement(TokenList):
     """Represents a SQL statement."""
@@ -433,8 +435,7 @@ class Statement(TokenList):
         elif token.ttype in (T.Keyword.DML, T.Keyword.DDL):
             return token.normalized
 
-        # duckdb supports FROM-first syntax, PIVOT statements
-        elif token.normalized in {'FROM', 'PIVOT', 'PIVOT_WIDER', 'UNPIVOT'}:
+        elif token.normalized in SELECT_LIKE:
             return 'SELECT'
 
         elif token.ttype == T.Keyword.CTE:
@@ -450,6 +451,8 @@ class Statement(TokenList):
                     if token is not None \
                             and token.ttype == T.Keyword.DML:
                         return token.normalized
+                    elif token.normalized in SELECT_LIKE:
+                        return 'SELECT'
 
         # Hmm, probably invalid syntax, so return unknown.
         return 'UNKNOWN'

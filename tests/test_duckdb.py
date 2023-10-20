@@ -15,3 +15,13 @@ USING sum(value_count)
 GROUP BY value_id
 """)[0]
     assert statement.get_type() == "SELECT"
+
+
+def test_pivot_with_cte():
+    statement = sqlparse.parse("""
+with my_cte as (
+    select * from df
+)
+PIVOT my_cte ON date USING SUM(number)
+""")[0]
+    assert statement.get_type() == "SELECT"
