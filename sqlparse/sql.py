@@ -410,8 +410,10 @@ class TokenList(Token):
             elif isinstance(token, (Identifier, Function)):
                 return token.get_real_name() if real_name else token.get_name()
 
+
 # duckdb supports FROM-first syntax, PIVOT statements
 SELECT_LIKE = {'FROM', 'PIVOT', 'PIVOT_WIDER', 'UNPIVOT'}
+
 
 class Statement(TokenList):
     """Represents a SQL statement."""
