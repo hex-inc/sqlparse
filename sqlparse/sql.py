@@ -429,6 +429,10 @@ class Statement(TokenList):
         are ignored.
         """
         token = self.token_first(skip_cm=True)
+
+        while isinstance(token, Parenthesis):
+            token = token.token_next(0, skip_cm=True)[1]
+
         if token is None:
             # An "empty" statement that either has not tokens at all
             # or only whitespace tokens.

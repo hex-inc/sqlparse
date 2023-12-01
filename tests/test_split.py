@@ -166,3 +166,9 @@ def test_split_mysql_handler_for(load_file):
     # see issue581
     stmts = sqlparse.split(load_file('mysql_handler.sql'))
     assert len(stmts) == 2
+
+
+def test_unecessary_parens():
+    (stmt,) = sqlparse.parse("(select * from foo)")
+    stmt._pprint_tree()
+    assert stmt.get_type() == "SELECT"
