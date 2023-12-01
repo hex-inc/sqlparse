@@ -170,5 +170,4 @@ def test_split_mysql_handler_for(load_file):
 
 def test_unecessary_parens():
     (stmt,) = sqlparse.parse("(select * from foo)")
-    stmt._pprint_tree()
     assert stmt.get_type() == "SELECT"
