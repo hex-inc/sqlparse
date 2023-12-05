@@ -11,7 +11,7 @@ JOIN_TYPES = (
 )
 
 
-def enumerate_types(join_types=[JOIN_TYPES]):
+def enumerate_types(join_types=JOIN_TYPES):
     if isinstance(join_types, str):
         yield (join_types,) if join_types else ()
     elif isinstance(join_types, tuple):
