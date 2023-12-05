@@ -5,7 +5,7 @@
 # This module is part of python-sqlparse and is released under
 # the BSD License: https://opensource.org/licenses/BSD-3-Clause
 
-from sqlparse import tokens
+from sqlparse import tokens, joins
 
 # object() only supports "is" and is useful as a marker
 # use this marker to specify that the given regex in SQL_REGEX
@@ -68,8 +68,7 @@ SQL_REGEX = [
     # cannot be preceded by word character or a right bracket --
     # otherwise it's probably an array index
     (r'(?<![\w\])])(\[[^\]\[]+\])', tokens.Name),
-    (r'((LEFT\s+|RIGHT\s+|FULL\s+)?(INNER\s+|OUTER\s+|STRAIGHT\s+)?'
-     r'|(CROSS\s+|NATURAL\s+)?)?JOIN\b', tokens.Keyword),
+    (joins.types_as_regex(), tokens.Keyword),
     (r'END(\s+IF|\s+LOOP|\s+WHILE)?\b', tokens.Keyword),
     (r'NOT\s+NULL\b', tokens.Keyword),
     (r'NULLS\s+(FIRST|LAST)\b', tokens.Keyword),
@@ -687,7 +686,6 @@ KEYWORDS_COMMON = {
     'FROM': tokens.Keyword,
     'INNER': tokens.Keyword,
     'JOIN': tokens.Keyword,
-    'STRAIGHT_JOIN': tokens.Keyword,
     'AND': tokens.Keyword,
     'OR': tokens.Keyword,
     'LIKE': tokens.Keyword,

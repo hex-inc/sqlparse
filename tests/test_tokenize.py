@@ -146,9 +146,8 @@ def test_stream_error():
     'FULL OUTER JOIN',
     'NATURAL JOIN',
     'CROSS JOIN',
-    'STRAIGHT JOIN',
-    'INNER JOIN',
-    'LEFT INNER JOIN'])
+    'STRAIGHT_JOIN',
+    'INNER JOIN'])
 def test_parse_join(expr):
     p = sqlparse.parse('{} foo'.format(expr))[0]
     assert len(p.tokens) == 3
