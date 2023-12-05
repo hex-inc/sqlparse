@@ -1,6 +1,15 @@
 import itertools
 
 
+# this data structure is a kind of grammar for allowed SQL joins. it expands
+# to a sequence of keyword tuples representing valid joins as follows:
+# - tuples expand to a union of the types encoded in each element
+#   - empty string element means the "group" is optional
+# - lists represent product of the types encoded in each element
+# - strings represent a literal option for an element of the type
+#
+# it is mainly modeled after the duckdb join syntax documented here:
+#   https://duckdb.org/docs/sql/query_syntax/from#syntax
 JOIN_TYPES = (
     'STRAIGHT_JOIN',
     [
@@ -17,6 +26,7 @@ JOIN_TYPES = (
 )
 
 
+# generates all valid join types as a sequence of tuples of keywords
 def enumerate_types(join_types=JOIN_TYPES):
     if isinstance(join_types, str):
         yield (join_types,) if join_types else ()
@@ -33,6 +43,8 @@ def enumerate_types(join_types=JOIN_TYPES):
         })
 
 
+# transforms the `JOIN_TYPES` representation into a regex matching any valid'
+# join type, in a format compatible with the lexer's `SQL_REGEX`
 def types_as_regex(join_types=JOIN_TYPES):
     if isinstance(join_types, str):
         return join_types + (r'\b' if 'JOIN' in join_types else r'\s+')
