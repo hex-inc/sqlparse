@@ -6,7 +6,6 @@ import pytest
 import sqlparse
 from sqlparse import lexer
 from sqlparse import sql, tokens as T
-from sqlparse import keywords
 
 
 def test_tokenize_simple():
