@@ -12,6 +12,7 @@ from sqlparse import tokens, joins
 # shall be processed further through a lookup in the KEYWORDS dictionaries
 PROCESS_AS_KEYWORD = object()
 
+
 SQL_REGEX = [
     (r'(--|# )\+.*?(\r\n|\r|\n|$)', tokens.Comment.Single.Hint),
     (r'/\*\+[\s\S]*?\*/', tokens.Comment.Multiline.Hint),
