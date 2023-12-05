@@ -14,6 +14,7 @@ from sqlparse import engine
 from sqlparse import tokens
 from sqlparse import filters
 from sqlparse import formatter
+from sqlparse import keywords
 
 
 __version__ = '0.5.0.dev0'

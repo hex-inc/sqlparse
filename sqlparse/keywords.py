@@ -12,6 +12,23 @@ from sqlparse import tokens
 # shall be processed further through a lookup in the KEYWORDS dictionaries
 PROCESS_AS_KEYWORD = object()
 
+JOIN_TYPES = (
+    'CROSS',
+    'POSITIONAL',
+    [
+        ('', 'NATURAL', 'ASOF'),
+        ('', 'INNER', [('LEFT', 'RIGHT', 'FULL'), ('', 'OUTER')]),
+    ],
+)
+def join_types_to_regex(join_types):
+    if isinstance(join_types, str):
+        return join_types + r'\s+'
+    elif isinstance(join_types, tuple):
+        is_optional = '' in join_types
+        group = '|'.join(join_types_to_regex(type) for type in join_types if type != '')
+        return '(?:' + group + ')' + ('?' if is_optional else '')
+    else:
+        return ''.join(join_types_to_regex(type) for type in join_types)
 
 SQL_REGEX = [
     (r'(--|# )\+.*?(\r\n|\r|\n|$)', tokens.Comment.Single.Hint),
@@ -68,8 +85,7 @@ SQL_REGEX = [
     # cannot be preceded by word character or a right bracket --
     # otherwise it's probably an array index
     (r'(?<![\w\])])(\[[^\]\[]+\])', tokens.Name),
-    (r'((LEFT\s+|RIGHT\s+|FULL\s+)?(INNER\s+|OUTER\s+|STRAIGHT\s+)?'
-     r'|(CROSS\s+|NATURAL\s+)?)?JOIN\b', tokens.Keyword),
+    (join_types_to_regex(JOIN_TYPES) + r'JOIN\b', tokens.Keyword),
     (r'END(\s+IF|\s+LOOP|\s+WHILE)?\b', tokens.Keyword),
     (r'NOT\s+NULL\b', tokens.Keyword),
     (r'NULLS\s+(FIRST|LAST)\b', tokens.Keyword),

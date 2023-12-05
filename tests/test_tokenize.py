@@ -6,6 +6,7 @@ import pytest
 import sqlparse
 from sqlparse import lexer
 from sqlparse import sql, tokens as T
+from sqlparse import keywords
 
 
 def test_tokenize_simple():
@@ -146,9 +147,8 @@ def test_stream_error():
     'FULL OUTER JOIN',
     'NATURAL JOIN',
     'CROSS JOIN',
-    'STRAIGHT JOIN',
-    'INNER JOIN',
-    'LEFT INNER JOIN'])
+    'STRAIGHT_JOIN',
+    'INNER JOIN'])
 def test_parse_join(expr):
     p = sqlparse.parse('{} foo'.format(expr))[0]
     assert len(p.tokens) == 3
