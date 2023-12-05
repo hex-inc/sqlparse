@@ -68,7 +68,7 @@ SQL_REGEX = [
     # cannot be preceded by word character or a right bracket --
     # otherwise it's probably an array index
     (r'(?<![\w\])])(\[[^\]\[]+\])', tokens.Name),
-    (joins.types_as_regex() + r'JOIN\b', tokens.Keyword),
+    (joins.types_as_regex(), tokens.Keyword),
     (r'END(\s+IF|\s+LOOP|\s+WHILE)?\b', tokens.Keyword),
     (r'NOT\s+NULL\b', tokens.Keyword),
     (r'NULLS\s+(FIRST|LAST)\b', tokens.Keyword),

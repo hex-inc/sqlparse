@@ -2,11 +2,17 @@ import itertools
 
 
 JOIN_TYPES = (
-    'CROSS',
-    'POSITIONAL',
+    'STRAIGHT_JOIN',
     [
-        ('', 'NATURAL', 'ASOF'),
-        ('', 'INNER', [('LEFT', 'RIGHT', 'FULL'), ('', 'OUTER')]),
+        (
+            'CROSS',
+            'POSITIONAL',
+            [
+                ('', 'NATURAL', 'ASOF'),
+                ('', 'INNER', [('LEFT', 'RIGHT', 'FULL'), ('', 'OUTER')]),
+            ],
+        ),
+        'JOIN',
     ],
 )
 
@@ -29,7 +35,7 @@ def enumerate_types(join_types=JOIN_TYPES):
 
 def types_as_regex(join_types=JOIN_TYPES):
     if isinstance(join_types, str):
-        return join_types + r'\s+'
+        return join_types + (r'\b' if 'JOIN' in join_types else r'\s+')
     elif isinstance(join_types, tuple):
         is_optional = '' in join_types
         group = '|'.join(
