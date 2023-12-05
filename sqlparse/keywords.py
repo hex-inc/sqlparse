@@ -20,15 +20,22 @@ JOIN_TYPES = (
         ('', 'INNER', [('LEFT', 'RIGHT', 'FULL'), ('', 'OUTER')]),
     ],
 )
+
+
 def join_types_to_regex(join_types):
     if isinstance(join_types, str):
         return join_types + r'\s+'
     elif isinstance(join_types, tuple):
         is_optional = '' in join_types
-        group = '|'.join(join_types_to_regex(type) for type in join_types if type != '')
+        group = '|'.join(
+            join_types_to_regex(type)
+            for type in join_types
+            if type != ''
+        )
         return '(?:' + group + ')' + ('?' if is_optional else '')
     else:
         return ''.join(join_types_to_regex(type) for type in join_types)
+
 
 SQL_REGEX = [
     (r'(--|# )\+.*?(\r\n|\r|\n|$)', tokens.Comment.Single.Hint),

@@ -14,7 +14,7 @@ from sqlparse import engine
 from sqlparse import tokens
 from sqlparse import filters
 from sqlparse import formatter
-from sqlparse import keywords
+from sqlparse import keywords  # noqa: F401
 
 
 __version__ = '0.5.0.dev0'
