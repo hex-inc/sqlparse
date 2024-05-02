@@ -466,7 +466,7 @@ KEYWORDS = {
     'RESOURCE': tokens.Keyword,
     'RESTART': tokens.Keyword,
     'RESTRICT': tokens.Keyword,
-    'RESULT': tokens.Keyword,
+    # 'RESULT': tokens.Keyword,
     'RETURN': tokens.Keyword,
     'RETURNED_LENGTH': tokens.Keyword,
     'RETURNED_OCTET_LENGTH': tokens.Keyword,
