@@ -566,3 +566,10 @@ def test_configurable_regex():
         for t in tokens
         if t.ttype not in sqlparse.tokens.Whitespace
     )[4] == (sqlparse.tokens.Keyword, "zorder by")
+
+
+def test_truncate_statement_type():
+    s = "truncate table production"
+    stmts = sqlparse.parse(s)
+    assert len(stmts) == 1
+    assert stmts[0].get_type() == "TRUNCATE"
