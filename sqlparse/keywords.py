@@ -574,7 +574,6 @@ KEYWORDS = {
     'TRIGGER_SCHEMA': tokens.Keyword,
     'TRIM': tokens.Keyword,
     'TRUE': tokens.Keyword,
-    'TRUNCATE': tokens.Keyword,
     'TRUSTED': tokens.Keyword,
     'TYPE': tokens.Keyword,
 
@@ -678,6 +677,7 @@ KEYWORDS_COMMON = {
     'UPSERT': tokens.Keyword.DML,
     'REPLACE': tokens.Keyword.DML,
     'MERGE': tokens.Keyword.DML,
+    'TRUNCATE': tokens.Keyword.DML,
     'DROP': tokens.Keyword.DDL,
     'CREATE': tokens.Keyword.DDL,
     'ALTER': tokens.Keyword.DDL,
