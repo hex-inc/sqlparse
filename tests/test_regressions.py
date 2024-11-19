@@ -3,9 +3,9 @@ import sys
 
 import pytest
 
-import sqlparse
-from sqlparse import sql, tokens as T
-from sqlparse.exceptions import SQLParseError
+import hex.sqlparse as sqlparse
+from hex.sqlparse import sql, tokens as T
+from hex.sqlparse.exceptions import SQLParseError
 
 
 def test_issue9():

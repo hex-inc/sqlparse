@@ -5,7 +5,7 @@
 # This module is part of python-sqlparse and is released under
 # the BSD License: https://opensource.org/licenses/BSD-3-Clause
 
-from sqlparse import tokens
+from hex.sqlparse import tokens
 
 # object() only supports "is" and is useful as a marker
 # use this marker to specify that the given regex in SQL_REGEX

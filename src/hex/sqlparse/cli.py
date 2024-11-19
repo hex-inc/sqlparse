@@ -23,8 +23,8 @@ import argparse
 import sys
 from io import TextIOWrapper
 
-import sqlparse
-from sqlparse.exceptions import SQLParseError
+import hex.sqlparse as sqlparse
+from hex.sqlparse.exceptions import SQLParseError
 
 
 # TODO: Add CLI Tests

@@ -7,7 +7,7 @@
 
 import re
 
-from sqlparse import sql, tokens as T
+from hex.sqlparse import sql, tokens as T
 
 
 # FIXME: Doesn't work

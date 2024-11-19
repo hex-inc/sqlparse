@@ -7,8 +7,8 @@
 
 import re
 
-from sqlparse import sql, tokens as T
-from sqlparse.utils import split_unquoted_newlines
+from hex.sqlparse import sql, tokens as T
+from hex.sqlparse.utils import split_unquoted_newlines
 
 
 class StripCommentsFilter:

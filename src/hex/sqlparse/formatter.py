@@ -7,8 +7,8 @@
 
 """SQL formatter"""
 
-from sqlparse import filters
-from sqlparse.exceptions import SQLParseError
+from hex.sqlparse import filters
+from hex.sqlparse.exceptions import SQLParseError
 
 
 def validate_options(options):  # noqa: C901

@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "sqlparse"
+name = "hex-sqlparse"
 description = "A non-validating SQL parser."
 authors = [{name = "Andi Albrecht", email = "albrecht.andi@gmail.com"}]
 readme = "README.rst"
@@ -37,7 +37,7 @@ Source = "https://github.com/andialbrecht/sqlparse"
 Tracker = "https://github.com/andialbrecht/sqlparse/issues"
 
 [project.scripts]
-sqlformat = "sqlparse.__main__:main"
+sqlformat = "hex.sqlparse.__main__:main"
 
 [project.optional-dependencies]
 dev = [
@@ -48,8 +48,12 @@ doc = [
     "sphinx",
 ]
 
+[tool.hatch.build.targets.wheel]
+sources = ["src"]
+only-include = ["src/hex/sqlparse"]
+
 [tool.hatch.version]
-path = "sqlparse/__init__.py"
+path = "src/hex/sqlparse/__init__.py"
 
 [tool.hatch.envs.default]
 dependencies = [
@@ -71,7 +75,7 @@ cov = [
     "test-cov",
     "cov-report",
 ]
-check = "flake8 sqlparse/"
+check = "flake8 src/"
 test = ["check", "unittest"]
 
 [[tool.hatch.envs.all.matrix]]
@@ -82,18 +86,18 @@ dependencies = [
     "mypy>=1.0.0",
 ]
 [tool.hatch.envs.types.scripts]
-check = "mypy --install-types --non-interactive {args:sqlparse tests}"
+check = "mypy --install-types --non-interactive {args:src tests}"
 
 [tool.coverage.run]
-source_pkgs = ["sqlparse", "tests"]
+source_pkgs = ["src", "tests"]
 branch = true
 parallel = true
 omit = [
-    "sqlparse/__main__.py",
+    "src/hex/sqlparse/__main__.py",
 ]
 
 [tool.coverage.paths]
-sqlparse = ["sqlparse"]
+sqlparse = ["src/hex/sqlparse"]
 tests = ["tests"]
 
 [tool.coverage.report]

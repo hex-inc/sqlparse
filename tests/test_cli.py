@@ -3,7 +3,7 @@ import sys
 
 import pytest
 
-import sqlparse
+import hex.sqlparse as sqlparse
 
 
 def test_cli_main_empty():
@@ -69,7 +69,7 @@ def test_stdout(filepath, load_file, capsys):
 
 def test_script():
     # Call with the --help option as a basic sanity check.
-    cmd = [sys.executable, '-m', 'sqlparse.cli', '--help']
+    cmd = [sys.executable, '-m', 'hex.sqlparse.cli', '--help']
     assert subprocess.call(cmd) == 0
 
 

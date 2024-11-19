@@ -9,9 +9,9 @@
 
 import re
 
-from sqlparse import tokens as T
-from sqlparse.exceptions import SQLParseError
-from sqlparse.utils import imt, remove_quotes
+from hex.sqlparse import tokens as T
+from hex.sqlparse.exceptions import SQLParseError
+from hex.sqlparse.utils import imt, remove_quotes
 
 
 class NameAliasMixin:

@@ -7,10 +7,10 @@
 
 """filter"""
 
-from sqlparse import lexer
-from sqlparse.engine import grouping
-from sqlparse.engine.statement_splitter import StatementSplitter
-from sqlparse.filters import StripTrailingSemicolonFilter
+from hex.sqlparse import lexer
+from hex.sqlparse.engine import grouping
+from hex.sqlparse.engine.statement_splitter import StatementSplitter
+from hex.sqlparse.filters import StripTrailingSemicolonFilter
 
 
 class FilterStack:

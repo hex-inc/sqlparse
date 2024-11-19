@@ -3,9 +3,9 @@ from io import StringIO
 
 import pytest
 
-import sqlparse
-from sqlparse import sql, tokens as T, keywords
-from sqlparse.lexer import Lexer
+import hex.sqlparse as sqlparse
+from hex.sqlparse import sql, tokens as T, keywords
+from hex.sqlparse.lexer import Lexer
 
 
 def test_parse_tokenize():

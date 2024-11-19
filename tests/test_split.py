@@ -5,7 +5,7 @@ from io import StringIO
 
 import pytest
 
-import sqlparse
+import hex.sqlparse as sqlparse
 
 
 def test_split_semicolon():

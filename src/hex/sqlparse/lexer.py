@@ -16,8 +16,8 @@ from threading import Lock
 
 from io import TextIOBase
 
-from sqlparse import tokens, keywords
-from sqlparse.utils import consume
+from hex.sqlparse import tokens, keywords
+from hex.sqlparse.utils import consume
 
 
 class Lexer:

@@ -1,7 +1,7 @@
 import pytest
 
-import sqlparse
-from sqlparse.exceptions import SQLParseError
+import hex.sqlparse as sqlparse
+from hex.sqlparse.exceptions import SQLParseError
 
 
 class TestFormat:

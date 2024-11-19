@@ -1,7 +1,7 @@
 import pytest
 
-from sqlparse import tokens
-from sqlparse.lexer import Lexer
+from hex.sqlparse import tokens
+from hex.sqlparse.lexer import Lexer
 
 
 class TestSQLREGEX:

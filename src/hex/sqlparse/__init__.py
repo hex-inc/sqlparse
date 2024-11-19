@@ -8,12 +8,12 @@
 """Parse SQL statements."""
 
 # Setup namespace
-from sqlparse import sql
-from sqlparse import cli
-from sqlparse import engine
-from sqlparse import tokens
-from sqlparse import filters
-from sqlparse import formatter
+from hex.sqlparse import sql
+from hex.sqlparse import cli
+from hex.sqlparse import engine
+from hex.sqlparse import tokens
+from hex.sqlparse import filters
+from hex.sqlparse import formatter
 
 
 __version__ = '0.5.2'

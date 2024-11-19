@@ -1,6 +1,6 @@
 import pytest
 
-from sqlparse import utils
+from hex.sqlparse import utils
 
 
 @pytest.mark.parametrize('value, expected', (

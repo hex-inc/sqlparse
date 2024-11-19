@@ -1,7 +1,7 @@
 import pytest
 
-import sqlparse
-from sqlparse import sql, tokens as T
+import hex.sqlparse as sqlparse
+from hex.sqlparse import sql, tokens as T
 
 
 def test_grouping_parenthesis():

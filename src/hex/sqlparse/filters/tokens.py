@@ -5,7 +5,7 @@
 # This module is part of python-sqlparse and is released under
 # the BSD License: https://opensource.org/licenses/BSD-3-Clause
 
-from sqlparse import tokens as T
+from hex.sqlparse import tokens as T
 
 
 class _CaseFilter:
