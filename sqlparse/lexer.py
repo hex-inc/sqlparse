@@ -136,13 +136,15 @@ class Lexer:
         for pos, char in iterable:
             for rexmatch, action in self._SQL_REGEX:
                 m = rexmatch(text, pos)
+                if m is not None and m.group() == "IFF":
+                    print(m.group(), pos, action)
 
                 if not m:
                     continue
                 elif isinstance(action, tokens._TokenType):
-                    yield action, m.group()
+                    yield action, m.group(), pos
                 elif action is keywords.PROCESS_AS_KEYWORD:
-                    yield self.is_keyword(m.group())
+                    yield (*self.is_keyword(m.group()), pos)
 
                 consume(iterable, m.end() - pos - 1)
                 break
