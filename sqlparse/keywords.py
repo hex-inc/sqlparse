@@ -34,7 +34,7 @@ SQL_REGEX = [
     # see https://github.com/andialbrecht/sqlparse/pull/64
     # AS and IN are special, it may be followed by a parenthesis, but
     # are never functions, see issue183 and issue507
-    (r"(CASE|IN|VALUES|USING|FROM|AS)\b", tokens.Keyword),
+    (r"(CASE|IN|VALUES|USING|FROM|AS|IFF)\b", tokens.Keyword),
     (r"(PIVOT|PIVOT_WIDER|UNPIVOT)\b", tokens.Keyword),
     (r"(@|##|#)[A-ZÀ-Ü]\w+", tokens.Name),
     # see issue #39
@@ -925,6 +925,7 @@ KEYWORDS_SNOWFLAKE = {
     "TRY_CAST": tokens.Keyword,
     "UNPIVOT": tokens.Keyword,
     "VARIANT": tokens.Name.Builtin,
+    "IFF": tokens.Keyword,
 }
 
 
