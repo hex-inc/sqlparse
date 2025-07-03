@@ -136,8 +136,6 @@ class Lexer:
         for pos, char in iterable:
             for rexmatch, action in self._SQL_REGEX:
                 m = rexmatch(text, pos)
-                if m is not None and m.group() == "IFF":
-                    print(m.group(), pos, action)
 
                 if not m:
                     continue
