@@ -73,15 +73,15 @@ class TestFormat:
         assert res == 'select'
         sql = '/* sql starts here */ select'
         res = sqlparse.format(sql, strip_comments=True)
-        assert res == 'select'
+        assert res == ' select'  # note whitespace is preserved, see issue 772
         sql = '/*\n * sql starts here\n */\nselect'
         res = sqlparse.format(sql, strip_comments=True)
         assert res == 'select'
         sql = 'select (/* sql starts here */ select 2)'
-        res = sqlparse.format(sql, strip_comments=True)
+        res = sqlparse.format(sql, strip_comments=True, strip_whitespace=True)
         assert res == 'select (select 2)'
         sql = 'select (/* sql /* starts here */ select 2)'
-        res = sqlparse.format(sql, strip_comments=True)
+        res = sqlparse.format(sql, strip_comments=True, strip_whitespace=True)
         assert res == 'select (select 2)'
 
     def test_strip_comments_preserves_linebreak(self):
@@ -100,6 +100,31 @@ class TestFormat:
         sql = 'select * -- a comment\n\nfrom foo'
         res = sqlparse.format(sql, strip_comments=True)
         assert res == 'select *\n\nfrom foo'
+
+    def test_strip_comments_preserves_whitespace(self):
+        sql = 'SELECT 1/*bar*/ AS foo'  # see issue772
+        res = sqlparse.format(sql, strip_comments=True)
+        assert res == 'SELECT 1 AS foo'
+
+    def test_strip_comments_preserves_hint(self):
+        sql = 'select --+full(u)'
+        res = sqlparse.format(sql, strip_comments=True)
+        assert res == sql
+        sql = '#+ hint\nselect * from foo'
+        res = sqlparse.format(sql, strip_comments=True)
+        assert res == sql
+        sql = 'select --+full(u)\n--comment simple'
+        res = sqlparse.format(sql, strip_comments=True)
+        assert res == 'select --+full(u)\n'
+        sql = '#+ hint\nselect * from foo\n# comment simple'
+        res = sqlparse.format(sql, strip_comments=True)
+        assert res == '#+ hint\nselect * from foo\n'
+        sql = 'SELECT /*+cluster(T)*/* FROM T_EEE T where A >:1'
+        res = sqlparse.format(sql, strip_comments=True)
+        assert res == sql
+        sql = 'insert /*+ DIRECT */ into sch.table_name as select * from foo'
+        res = sqlparse.format(sql, strip_comments=True)
+        assert res == sql
 
     def test_strip_ws(self):
         f = lambda sql: sqlparse.format(sql, strip_whitespace=True)
@@ -722,3 +747,28 @@ def test_format_right_margin_invalid_option(right_margin):
 def test_format_right_margin():
     # TODO: Needs better test, only raises exception right now
     sqlparse.format('foo', right_margin="79")
+
+
+def test_format_json_ops():  # issue542
+    formatted = sqlparse.format(
+        "select foo->'bar', foo->'bar';", reindent=True)
+    expected = "select foo->'bar',\n       foo->'bar';"
+    assert formatted == expected
+
+
+@pytest.mark.parametrize('sql, expected_normal, expected_compact', [
+    ('case when foo then 1 else bar end',
+     'case\n    when foo then 1\n    else bar\nend',
+     'case when foo then 1 else bar end')])
+def test_compact(sql, expected_normal, expected_compact):  # issue783
+    formatted_normal = sqlparse.format(sql, reindent=True)
+    formatted_compact = sqlparse.format(sql, reindent=True, compact=True)
+    assert formatted_normal == expected_normal
+    assert formatted_compact == expected_compact
+
+
+def test_strip_ws_removes_trailing_ws_in_groups():  # issue782
+    formatted = sqlparse.format('( where foo = bar  ) from',
+                                strip_whitespace=True)
+    expected = '(where foo = bar) from'
+    assert formatted == expected

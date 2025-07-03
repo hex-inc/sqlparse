@@ -17,8 +17,8 @@ from sqlparse import formatter
 from sqlparse import joins  # noqa: F401
 
 
-__version__ = '0.5.0.dev0'
-__all__ = ['engine', 'filters', 'formatter', 'sql', 'tokens', 'cli']
+__version__ = "0.5.4.dev0"
+__all__ = ["engine", "filters", "formatter", "sql", "tokens", "cli"]
 
 
 def parse(sql, encoding=None):
@@ -57,15 +57,17 @@ def format(sql, encoding=None, **options):
     options = formatter.validate_options(options)
     stack = formatter.build_filter_stack(stack, options)
     stack.postprocess.append(filters.SerializerUnicode())
-    return ''.join(stack.run(sql, encoding))
+    return "".join(stack.run(sql, encoding))
 
 
-def split(sql, encoding=None):
+def split(sql, encoding=None, strip_semicolon=False):
     """Split *sql* into single statements.
 
     :param sql: A string containing one or more SQL statements.
     :param encoding: The encoding of the statement (optional).
+    :param strip_semicolon: If True, remove trainling semicolons
+        (default: False).
     :returns: A list of strings.
     """
-    stack = engine.FilterStack()
+    stack = engine.FilterStack(strip_semicolon=strip_semicolon)
     return [str(stmt).strip() for stmt in stack.run(sql, encoding)]
