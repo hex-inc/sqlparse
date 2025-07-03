@@ -61,6 +61,136 @@ Other
 * Update github actions to test on Python 3.10 as well (pr661, by cclaus).
 
 
+Release 0.5.3 (Dez 10, 2024)
+----------------------------
+
+Bug Fixes
+
+* This version introduces a more generalized handling of potential denial of
+  service attack (DOS) due to recursion errors for deeply nested statements.
+  Brought up and fixed by @living180. Thanks a lot!
+
+
+Release 0.5.2 (Nov 14, 2024)
+----------------------------
+
+Bug Fixes
+
+* EXTENSION is now recognized as a keyword (issue785).
+* SQL hints are not removed when removing comments (issue262, by skryzh).
+
+
+Release 0.5.1 (Jul 15, 2024)
+----------------------------
+
+Enhancements
+
+* New "compact" option for formatter. If set, the formatter tries to produce
+  a more compact output by avoiding some line breaks (issue783).
+
+Bug Fixes
+
+* The strip comments filter was a bit greedy and removed too much
+  whitespace (issue772).
+  Note: In some cases you might want to add `strip_whitespace=True` where you
+  previously used just `strip_comments=True`. `strip_comments` did some of the
+  work that `strip_whitespace` should do.
+* Fix error when splitting statements that contain multiple CASE clauses
+  within a BEGIN block (issue784).
+* Fix whitespace removal with nested expressions (issue782).
+* Fix parsing and formatting of ORDER clauses containing NULLS FIRST or
+  NULLS LAST (issue532).
+
+
+Release 0.5.0 (Apr 13, 2024)
+----------------------------
+
+Notable Changes
+
+* Drop support for Python 3.5, 3.6, and 3.7.
+* Python 3.12 is now supported (pr725, by hugovk).
+* IMPORTANT: Fixes a potential denial of service attack (DOS) due to recursion
+  error for deeply nested statements. Instead of recursion error a generic
+  SQLParseError is raised. See the security advisory for details:
+  https://github.com/andialbrecht/sqlparse/security/advisories/GHSA-2m57-hf25-phgg
+  The vulnerability was discovered by @uriyay-jfrog. Thanks for reporting!
+
+Enhancements
+
+* Splitting statements now allows to remove the semicolon at the end.
+  Some database backends love statements without semicolon (issue742).
+* Support TypedLiterals in get_parameters (pr749, by Khrol).
+* Improve splitting of Transact SQL when using GO keyword (issue762).
+* Support for some JSON operators (issue682).
+* Improve formatting of statements containing JSON operators (issue542).
+* Support for BigQuery and Snowflake keywords (pr699, by griffatrasgo).
+* Support parsing of OVER clause (issue701, pr768 by r33s3n6).
+
+Bug Fixes
+
+* Ignore dunder attributes when creating Tokens (issue672).
+* Allow operators to precede dollar-quoted strings (issue763).
+* Fix parsing of nested order clauses (issue745, pr746 by john-bodley).
+* Thread-safe initialization of Lexer class (issue730).
+* Classify TRUNCATE as DDL and GRANT/REVOKE as DCL keywords (based on pr719
+  by josuc1, thanks for bringing this up!).
+* Fix parsing of PRIMARY KEY (issue740).
+
+Other
+
+* Optimize performance of matching function (pr799, by admachainz).
+
+
+Release 0.4.4 (Apr 18, 2023)
+----------------------------
+
+Notable Changes
+
+* IMPORTANT: This release fixes a security vulnerability in the
+  parser where a regular expression vulnerable to ReDOS (Regular
+  Expression Denial of Service) was used. See the security advisory
+  for details: https://github.com/andialbrecht/sqlparse/security/advisories/GHSA-rrm6-wvj7-cwh2
+  The vulnerability was discovered by @erik-krogh from GitHub
+  Security Lab (GHSL). Thanks for reporting!
+
+Bug Fixes
+
+* Revert a change from 0.4.0 that changed IN to be a comparison (issue694).
+  The primary expectation is that IN is treated as a keyword and not as a
+  comparison operator. That also follows the definition of reserved keywords
+  for the major SQL syntax definitions.
+* Fix regular expressions for string parsing.
+
+Other
+
+* sqlparse now uses pyproject.toml instead of setup.cfg (issue685).
+
+
+Release 0.4.3 (Sep 23, 2022)
+----------------------------
+
+Enhancements
+
+* Add support for DIV operator (pr664, by chezou).
+* Add support for additional SPARK keywords (pr643, by mrmasterplan).
+* Avoid tokens copy (pr622, by living180).
+* Add REGEXP as a comparision (pr647, by PeterSandwich).
+* Add DISTINCTROW keyword for MS Access (issue677).
+* Improve parsing of CREATE TABLE AS SELECT (pr662, by chezou).
+
+Bug Fixes
+
+* Fix spelling of INDICATOR keyword (pr653, by ptld).
+* Fix formatting error in EXTRACT function (issue562, issue670, pr676, by ecederstrand).
+* Fix bad parsing of create table statements that use lower case (issue217, pr642, by mrmasterplan).
+* Handle backtick as valid quote char (issue628, pr629, by codenamelxl).
+* Allow any unicode character as valid identifier name (issue641).
+
+Other
+
+* Update github actions to test on Python 3.10 as well (pr661, by cclaus).
+
+
 Release 0.4.2 (Sep 10, 2021)
 ----------------------------
 

@@ -139,7 +139,12 @@ def group_typed_literal(tlist):
 
 def group_period(tlist):
     def match(token):
-        return token.match(T.Punctuation, '.')
+        for ttype, value in ((T.Punctuation, '.'),
+                             (T.Operator, '->'),
+                             (T.Operator, '->>')):
+            if token.match(ttype, value):
+                return True
+        return False
 
     def valid_prev(token):
         sqlcls = sql.SquareBrackets, sql.Identifier
@@ -153,7 +158,7 @@ def group_period(tlist):
     def post(tlist, pidx, tidx, nidx):
         # next_ validation is being performed here. issue261
         sqlcls = sql.SquareBrackets, sql.Function
-        ttypes = T.Name, T.String.Symbol, T.Wildcard
+        ttypes = T.Name, T.String.Symbol, T.Wildcard, T.String.Single
         next_ = tlist[nidx] if nidx is not None else None
         valid_next = imt(next_, i=sqlcls, t=ttypes)
 
@@ -230,6 +235,16 @@ def group_identifier(tlist):
         tidx, token = tlist.token_next_by(t=ttypes, idx=tidx)
 
 
+@recurse(sql.Over)
+def group_over(tlist):
+    tidx, token = tlist.token_next_by(m=sql.Over.M_OPEN)
+    while token:
+        nidx, next_ = tlist.token_next(tidx)
+        if imt(next_, i=sql.Parenthesis, t=T.Name):
+            tlist.group_tokens(sql.Over, tidx, nidx)
+        tidx, token = tlist.token_next_by(m=sql.Over.M_OPEN, idx=tidx)
+
+
 def group_arrays(tlist):
     sqlcls = sql.SquareBrackets, sql.Identifier, sql.Function
     ttypes = T.Name, T.String.Symbol
@@ -299,7 +314,7 @@ def group_comments(tlist):
     tidx, token = tlist.token_next_by(t=T.Comment)
     while token:
         eidx, end = tlist.token_not_matching(
-            lambda tk: imt(tk, t=T.Comment) or tk.is_whitespace, idx=tidx)
+            lambda tk: imt(tk, t=T.Comment) or tk.is_newline, idx=tidx)
         if end is not None:
             eidx, end = tlist.token_prev(eidx, skip_ws=False)
             tlist.group_tokens(sql.Comment, tidx, eidx)
@@ -356,10 +371,16 @@ def group_functions(tlist):
     while token:
         nidx, next_ = tlist.token_next(tidx)
         if isinstance(next_, sql.Parenthesis):
-            tlist.group_tokens(sql.Function, tidx, nidx)
+            over_idx, over = tlist.token_next(nidx)
+            if over and isinstance(over, sql.Over):
+                eidx = over_idx
+            else:
+                eidx = nidx
+            tlist.group_tokens(sql.Function, tidx, eidx)
         tidx, token = tlist.token_next_by(t=T.Name, idx=tidx)
 
 
+@recurse(sql.Identifier)
 def group_order(tlist):
     """Group together Identifier and Asc/Desc token"""
     tidx, token = tlist.token_next_by(t=T.Keyword.Order)
@@ -406,6 +427,7 @@ def group(stmt):
         group_for,
         group_begin,
 
+        group_over,
         group_functions,
         group_where,
         group_period,

@@ -17,13 +17,6 @@ def test_grouping_parenthesis():
     assert len(parsed.tokens[2].tokens[3].tokens) == 3
 
 
-def test_grouping_comments():
-    s = '/*\n * foo\n */   \n  bar'
-    parsed = sqlparse.parse(s)[0]
-    assert str(parsed) == s
-    assert len(parsed.tokens) == 2
-
-
 @pytest.mark.parametrize('s', ['foo := 1;', 'foo := 1'])
 def test_grouping_assignment(s):
     parsed = sqlparse.parse(s)[0]
@@ -185,6 +178,20 @@ def test_grouping_identifier_function():
     assert isinstance(p.tokens[0], sql.Identifier)
     assert isinstance(p.tokens[0].tokens[0], sql.Operation)
     assert isinstance(p.tokens[0].tokens[0].tokens[0], sql.Function)
+    p = sqlparse.parse('foo(c1) over win1 as bar')[0]
+    assert isinstance(p.tokens[0], sql.Identifier)
+    assert isinstance(p.tokens[0].tokens[0], sql.Function)
+    assert len(p.tokens[0].tokens[0].tokens) == 4
+    assert isinstance(p.tokens[0].tokens[0].tokens[3], sql.Over)
+    assert isinstance(p.tokens[0].tokens[0].tokens[3].tokens[2],
+                      sql.Identifier)
+    p = sqlparse.parse('foo(c1) over (partition by c2 order by c3) as bar')[0]
+    assert isinstance(p.tokens[0], sql.Identifier)
+    assert isinstance(p.tokens[0].tokens[0], sql.Function)
+    assert len(p.tokens[0].tokens[0].tokens) == 4
+    assert isinstance(p.tokens[0].tokens[0].tokens[3], sql.Over)
+    assert isinstance(p.tokens[0].tokens[0].tokens[3].tokens[2],
+                      sql.Parenthesis)
 
 
 @pytest.mark.parametrize('s', ['foo+100', 'foo + 100', 'foo*100'])
@@ -245,6 +252,14 @@ def test_grouping_identifier_list_with_order():
     assert isinstance(p.tokens[0], sql.IdentifierList)
     assert isinstance(p.tokens[0].tokens[3], sql.Identifier)
     assert str(p.tokens[0].tokens[3]) == '2 desc'
+
+
+def test_grouping_nested_identifier_with_order():
+    # issue745
+    p = sqlparse.parse('(a desc)')[0]
+    assert isinstance(p.tokens[0], sql.Parenthesis)
+    assert isinstance(p.tokens[0].tokens[1], sql.Identifier)
+    assert str(p.tokens[0].tokens[1]) == 'a desc'
 
 
 def test_grouping_where():
@@ -370,6 +385,14 @@ def test_grouping_function():
     p = sqlparse.parse('foo(null, bar)')[0]
     assert isinstance(p.tokens[0], sql.Function)
     assert len(list(p.tokens[0].get_parameters())) == 2
+    p = sqlparse.parse('foo(5) over win1')[0]
+    assert isinstance(p.tokens[0], sql.Function)
+    assert len(list(p.tokens[0].get_parameters())) == 1
+    assert isinstance(p.tokens[0].get_window(), sql.Identifier)
+    p = sqlparse.parse('foo(5) over (PARTITION BY c1)')[0]
+    assert isinstance(p.tokens[0], sql.Function)
+    assert len(list(p.tokens[0].get_parameters())) == 1
+    assert isinstance(p.tokens[0].get_window(), sql.Parenthesis)
 
 
 def test_grouping_function_not_in():
@@ -483,7 +506,7 @@ def test_comparison_with_parenthesis():
 ))
 def test_comparison_with_strings(operator):
     # issue148
-    p = sqlparse.parse("foo {} 'bar'".format(operator))[0]
+    p = sqlparse.parse(f"foo {operator} 'bar'")[0]
     assert len(p.tokens) == 1
     assert isinstance(p.tokens[0], sql.Comparison)
     assert p.tokens[0].right.value == "'bar'"
@@ -562,7 +585,7 @@ def test_comparison_with_typed_literal():
 
 @pytest.mark.parametrize('start', ['FOR', 'FOREACH'])
 def test_forloops(start):
-    p = sqlparse.parse('{} foo in bar LOOP foobar END LOOP'.format(start))[0]
+    p = sqlparse.parse(f'{start} foo in bar LOOP foobar END LOOP')[0]
     assert (len(p.tokens)) == 1
     assert isinstance(p.tokens[0], sql.For)
 
