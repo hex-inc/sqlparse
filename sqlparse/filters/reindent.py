@@ -26,25 +26,49 @@ class ReindentFilter:
         self._last_stmt = None
         self._last_func = None
 
-    def _flatten_up_to_token(self, token):
-        """Yields all tokens up to token but excluding current."""
-        if token.is_group:
-            token = next(token.flatten())
-
-        for t in self._curr_stmt.flatten():
-            if t == token:
+    def _reverse_leaves_before(self, target_leaf):
+        """Yield leaf token values in reverse order before target_leaf."""
+        current = target_leaf
+        while current is not self._curr_stmt and current.parent is not None:
+            parent = current.parent
+            try:
+                idx = parent.tokens.index(current)
+            except ValueError:
                 break
-            yield t
+            for i in range(idx - 1, -1, -1):
+                sibling = parent.tokens[i]
+                if sibling.is_group:
+                    yield from self._reverse_flatten(sibling)
+                else:
+                    yield sibling.value
+            current = parent
+
+    def _reverse_flatten(self, token_list):
+        """Yield all leaf token values in a TokenList in reverse order."""
+        for i in range(len(token_list.tokens) - 1, -1, -1):
+            child = token_list.tokens[i]
+            if child.is_group:
+                yield from self._reverse_flatten(child)
+            else:
+                yield child.value
 
     @property
     def leading_ws(self):
         return self.offset + self.indent * self.width
 
     def _get_offset(self, token):
-        raw = ''.join(map(str, self._flatten_up_to_token(token)))
-        line = (raw or '\n').splitlines()[-1]
-        # Now take current offset into account and return relative offset.
-        return len(line) - len(self.char * self.leading_ws)
+        if token.is_group:
+            token = next(token.flatten())
+
+        column = 0
+        for value in self._reverse_leaves_before(token):
+            newline_pos = value.rfind('\n')
+            if newline_pos != -1:
+                column += len(value) - newline_pos - 1
+                break
+            column += len(value)
+
+        return column - len(self.char * self.leading_ws)
 
     def nl(self, offset=0):
         return sql.Token(
@@ -136,37 +160,57 @@ class ReindentFilter:
             num_offset = 1 if self.char == '\t' else self._get_offset(first)
 
         if not tlist.within(sql.Function) and not tlist.within(sql.Values):
+            # Build index mapping for O(1) lookups instead of O(n)
+            # token_index calls
+            token_to_idx = {id(t): i
+                            for i, t in enumerate(tlist.tokens)}
             with offset(self, num_offset):
                 position = 0
+                shift = 0
                 for token in identifiers:
                     # Add 1 for the "," separator
                     position += len(token.value) + 1
                     if position > (self.wrap_after - self.offset):
                         adjust = 0
+                        tidx = token_to_idx[id(token)] + shift
                         if self.comma_first:
                             adjust = -2
-                            _, comma = tlist.token_prev(
-                                tlist.token_index(token))
+                            pidx, comma = tlist.token_prev(tidx)
                             if comma is None:
                                 continue
-                            token = comma
-                        tlist.insert_before(token, self.nl(offset=adjust))
-                        if self.comma_first:
+                            tlist.insert_before(
+                                pidx, self.nl(offset=adjust))
+                            shift += 1
+                            # comma is now at pidx + 1
                             _, ws = tlist.token_next(
-                                tlist.token_index(token), skip_ws=False)
+                                pidx + 1, skip_ws=False)
                             if (ws is not None
-                                    and ws.ttype is not T.Text.Whitespace):
+                                    and ws.ttype is not
+                                    T.Text.Whitespace):
                                 tlist.insert_after(
-                                    token, sql.Token(T.Whitespace, ' '))
+                                    pidx + 1,
+                                    sql.Token(T.Whitespace, ' '))
+                                shift += 1
+                        else:
+                            tlist.insert_before(
+                                tidx, self.nl(offset=adjust))
+                            shift += 1
                         position = 0
         else:
             # ensure whitespace
-            for token in tlist:
-                _, next_ws = tlist.token_next(
-                    tlist.token_index(token), skip_ws=False)
-                if token.value == ',' and not next_ws.is_whitespace:
-                    tlist.insert_after(
-                        token, sql.Token(T.Whitespace, ' '))
+            token_to_idx = {id(t): i
+                            for i, t in enumerate(tlist.tokens)}
+            ws_shift = 0
+            for token in list(tlist.tokens):
+                if token.value == ',':
+                    adj_i = token_to_idx[id(token)] + ws_shift
+                    _, next_ws = tlist.token_next(
+                        adj_i, skip_ws=False)
+                    if (next_ws is not None
+                            and not next_ws.is_whitespace):
+                        tlist.insert_after(
+                            adj_i, sql.Token(T.Whitespace, ' '))
+                        ws_shift += 1
 
             end_at = self.offset + sum(len(i.value) + 1 for i in identifiers)
             adjusted_offset = 0
@@ -175,17 +219,25 @@ class ReindentFilter:
                     and self._last_func):
                 adjusted_offset = -len(self._last_func.value) - 1
 
+            # Rebuild index mapping after whitespace insertions
+            token_to_idx = {id(t): i
+                            for i, t in enumerate(tlist.tokens)}
             with offset(self, adjusted_offset), indent(self):
+                shift = 0
                 if adjusted_offset < 0:
-                    tlist.insert_before(identifiers[0], self.nl())
+                    idx0 = token_to_idx[id(identifiers[0])] + shift
+                    tlist.insert_before(idx0, self.nl())
+                    shift += 1
                 position = 0
                 for token in identifiers:
                     # Add 1 for the "," separator
                     position += len(token.value) + 1
                     if (self.wrap_after > 0
                             and position > (self.wrap_after - self.offset)):
-                        adjust = 0
-                        tlist.insert_before(token, self.nl(offset=adjust))
+                        tidx = token_to_idx[id(token)] + shift
+                        tlist.insert_before(
+                            tidx, self.nl(offset=0))
+                        shift += 1
                         position = 0
         self._process_default(tlist)
 
