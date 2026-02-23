@@ -569,7 +569,7 @@ def test_configurable_keywords():
     Lexer.get_default_instance().default_initialization()
 
     assert list(
-        (t.ttype, str(t.value)) for t in tokens if t.ttype not in sqlparse.tokens.Whitespace
+        (t.ttype, str(t)) for t in tokens if t.ttype not in sqlparse.tokens.Whitespace
     ) == [
         (sqlparse.tokens.Keyword.DML, "select"),
         (sqlparse.tokens.Wildcard, "*"),
