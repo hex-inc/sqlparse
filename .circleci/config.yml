@@ -1,0 +1,19 @@
+version: 2.1
+
+jobs:
+  test:
+    docker:
+      - image: cimg/python:3.12
+    steps:
+      - checkout
+      - run:
+          name: Install hatch
+          command: pip install hatch
+      - run:
+          name: Run unit tests
+          command: hatch run unittest
+
+workflows:
+  ci:
+    jobs:
+      - test
