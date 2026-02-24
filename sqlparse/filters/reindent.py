@@ -94,34 +94,60 @@ class ReindentFilter:
         return tidx, token
 
     def _split_kwds(self, tlist):
+        # Pass 1: scan unmodified list for all keyword positions
+        inserts = {}   # idx -> token to insert before
+        deletes = set()
+
         tidx, token = self._next_token(tlist)
         while token:
             pidx, prev_ = tlist.token_prev(tidx, skip_ws=False)
             uprev = str(prev_)
 
             if prev_ and prev_.is_whitespace:
-                del tlist.tokens[pidx]
-                tidx -= 1
+                deletes.add(pidx)
 
             if not (uprev.endswith('\n') or uprev.endswith('\r')):
-                tlist.insert_before(tidx, self.nl())
-                tidx += 1
+                inserts[tidx] = self.nl()
 
             tidx, token = self._next_token(tlist, tidx)
 
+        # Pass 2: rebuild token list in O(n)
+        if inserts or deletes:
+            new_tokens = []
+            for i, tok in enumerate(tlist.tokens):
+                if i in inserts:
+                    nl_tok = inserts[i]
+                    nl_tok.parent = tlist
+                    new_tokens.append(nl_tok)
+                if i not in deletes:
+                    new_tokens.append(tok)
+            tlist.tokens = new_tokens
+
     def _split_statements(self, tlist):
         ttypes = T.Keyword.DML, T.Keyword.DDL
+        inserts = {}
+        deletes = set()
+
         tidx, token = tlist.token_next_by(t=ttypes)
         while token:
             pidx, prev_ = tlist.token_prev(tidx, skip_ws=False)
             if prev_ and prev_.is_whitespace:
-                del tlist.tokens[pidx]
-                tidx -= 1
+                deletes.add(pidx)
             # only break if it's not the first token
-            if prev_:
-                tlist.insert_before(tidx, self.nl())
-                tidx += 1
+            if prev_ is not None:
+                inserts[tidx] = self.nl()
             tidx, token = tlist.token_next_by(t=ttypes, idx=tidx)
+
+        if inserts or deletes:
+            new_tokens = []
+            for i, tok in enumerate(tlist.tokens):
+                if i in inserts:
+                    nl_tok = inserts[i]
+                    nl_tok.parent = tlist
+                    new_tokens.append(nl_tok)
+                if i not in deletes:
+                    new_tokens.append(tok)
+            tlist.tokens = new_tokens
 
     def _process(self, tlist):
         func_name = f'_process_{type(tlist).__name__}'
