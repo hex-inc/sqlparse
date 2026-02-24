@@ -240,6 +240,8 @@ class TokenList(Token):
         This method is recursively called for all child tokens.
         """
         for token in self.tokens:
+            if token is None:
+                continue
             if token.is_group:
                 yield from token.flatten()
             else:
@@ -247,7 +249,7 @@ class TokenList(Token):
 
     def get_sublists(self):
         for token in self.tokens:
-            if token.is_group:
+            if token is not None and token.is_group:
                 yield token
 
     @property
@@ -271,6 +273,8 @@ class TokenList(Token):
             indexes = range(start, end)
         for idx in indexes:
             token = self.tokens[idx]
+            if token is None:
+                continue
             for func in funcs:
                 if func(token):
                     return idx, token
@@ -345,30 +349,39 @@ class TokenList(Token):
                      include_end=True, extend=False):
         """Replace tokens by an instance of *grp_cls*."""
         start_idx = start
-        start = self.tokens[start_idx]
+        start_token = self.tokens[start_idx]
 
         end_idx = end + include_end
 
-        # will be needed later for new group_clauses
-        # while skip_ws and tokens and tokens[-1].is_whitespace:
-        #     tokens = tokens[:-1]
-
-        if extend and isinstance(start, grp_cls):
-            subtokens = self.tokens[start_idx + 1:end_idx]
-
-            grp = start
+        if extend and isinstance(start_token, grp_cls):
+            # Scan backwards: non-None tokens are at end of range
+            subtokens = []
+            for i in range(end_idx - 1, start_idx, -1):
+                t = self.tokens[i]
+                if t is None:
+                    break
+                subtokens.append(t)
+                self.tokens[i] = None
+            subtokens.reverse()
+            grp = start_token
             grp.tokens.extend(subtokens)
-            del self.tokens[start_idx + 1:end_idx]
         else:
-            subtokens = self.tokens[start_idx:end_idx]
+            subtokens = [t for t in self.tokens[start_idx:end_idx]
+                         if t is not None]
             grp = grp_cls(subtokens)
-            self.tokens[start_idx:end_idx] = [grp]
+            self.tokens[start_idx] = grp
+            for i in range(start_idx + 1, end_idx):
+                self.tokens[i] = None
             grp.parent = self
 
         for token in subtokens:
             token.parent = grp
 
         return grp
+
+    def _compact_tokens(self):
+        """Remove None sentinels left by deferred group_tokens."""
+        self.tokens = [t for t in self.tokens if t is not None]
 
     def insert_before(self, where, token):
         """Inserts *token* before *where*."""

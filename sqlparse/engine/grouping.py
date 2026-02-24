@@ -17,36 +17,28 @@ T_NAME = (T.Name, T.Name.Placeholder)
 def _group_matching(tlist, cls):
     """Groups Tokens that have beginning and end."""
     opens = []
-    tidx_offset = 0
-    for idx, token in enumerate(list(tlist)):
-        tidx = idx - tidx_offset
+    n = len(tlist.tokens)
+    for idx in range(n):
+        token = tlist.tokens[idx]
+        if token is None:
+            continue
 
         if token.is_whitespace:
-            # ~50% of tokens will be whitespace. Will checking early
-            # for them avoid 3 comparisons, but then add 1 more comparison
-            # for the other ~50% of tokens...
             continue
 
         if token.is_group and not isinstance(token, cls):
-            # Check inside previously grouped (i.e. parenthesis) if group
-            # of different type is inside (i.e., case). though ideally  should
-            # should check for all open/close tokens at once to avoid recursion
             _group_matching(token, cls)
             continue
 
         if token.match(*cls.M_OPEN):
-            opens.append(tidx)
+            opens.append(idx)
 
         elif token.match(*cls.M_CLOSE):
             try:
                 open_idx = opens.pop()
             except IndexError:
-                # this indicates invalid sql and unbalanced tokens.
-                # instead of break, continue in case other "valid" groups exist
                 continue
-            close_idx = tidx
-            tlist.group_tokens(cls, open_idx, close_idx)
-            tidx_offset += close_idx - open_idx
+            tlist.group_tokens(cls, open_idx, idx)
 
 
 def group_brackets(tlist):
@@ -417,6 +409,14 @@ def group_values(tlist):
         tlist.group_tokens(sql.Values, start_idx, end_idx, extend=True)
 
 
+def _compact_all(tlist):
+    """Recursively compact None sentinels from all token lists."""
+    tlist._compact_tokens()
+    for token in tlist.tokens:
+        if token.is_group:
+            _compact_all(token)
+
+
 def group(stmt):
     for func in [
         group_comments,
@@ -450,6 +450,7 @@ def group(stmt):
         group_values,
     ]:
         func(stmt)
+        _compact_all(stmt)
     return stmt
 
 
@@ -462,11 +463,9 @@ def _group(tlist, cls, match,
            ):
     """Groups together tokens that are joined by a middle token. i.e. x < y"""
 
-    tidx_offset = 0
     pidx, prev_ = None, None
     for idx, token in enumerate(list(tlist)):
-        tidx = idx - tidx_offset
-        if tidx < 0:  # tidx shouldn't get negative
+        if token is None:
             continue
 
         if token.is_whitespace:
@@ -475,14 +474,17 @@ def _group(tlist, cls, match,
         if recurse and token.is_group and not isinstance(token, cls):
             _group(token, cls, match, valid_prev, valid_next, post, extend)
 
+        # Token may have been consumed by a prior group_tokens in this pass
+        if tlist.tokens[idx] is None:
+            continue
+
         if match(token):
-            nidx, next_ = tlist.token_next(tidx)
+            nidx, next_ = tlist.token_next(idx)
             if prev_ and valid_prev(prev_) and valid_next(next_):
-                from_idx, to_idx = post(tlist, pidx, tidx, nidx)
+                from_idx, to_idx = post(tlist, pidx, idx, nidx)
                 grp = tlist.group_tokens(cls, from_idx, to_idx, extend=extend)
 
-                tidx_offset += to_idx - from_idx
                 pidx, prev_ = from_idx, grp
                 continue
 
-        pidx, prev_ = tidx, token
+        pidx, prev_ = idx, token
