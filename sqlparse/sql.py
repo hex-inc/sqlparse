@@ -82,7 +82,8 @@ class Token:
         value = self._get_repr_value()
 
         q = '"' if value.startswith("'") and value.endswith("'") else "'"
-        return "<{cls} {q}{value}{q} at 0x{id:2X}>".format(id=id(self), **locals())
+        return "<{cls} {q}{value}{q} at 0x{id:2X}>".format(
+            id=id(self), **locals())
 
     def _get_repr_name(self):
         return str(self.ttype).split(".")[-1]
@@ -331,7 +332,8 @@ class TokenList(Token):
         start = start if isinstance(start, int) else self.token_index(start)
         return start + self.tokens[start:].index(token)
 
-    def group_tokens(self, grp_cls, start, end, include_end=True, extend=False):
+    def group_tokens(self, grp_cls, start, end,
+                     include_end=True, extend=False):
         """Replace tokens by an instance of *grp_cls*."""
         start_idx = start
         start = self.tokens[start_idx]
@@ -343,11 +345,11 @@ class TokenList(Token):
         #     tokens = tokens[:-1]
 
         if extend and isinstance(start, grp_cls):
-            subtokens = self.tokens[start_idx + 1 : end_idx]
+            subtokens = self.tokens[start_idx + 1:end_idx]
 
             grp = start
             grp.tokens.extend(subtokens)
-            del self.tokens[start_idx + 1 : end_idx]
+            del self.tokens[start_idx + 1:end_idx]
         else:
             subtokens = self.tokens[start_idx:end_idx]
             grp = grp_cls(subtokens)
@@ -407,7 +409,8 @@ class TokenList(Token):
         _, prev_ = self.token_prev(dot_idx)
         return remove_quotes(prev_.value) if prev_ is not None else None
 
-    def _get_first_name(self, idx=None, reverse=False, keywords=False, real_name=False):
+    def _get_first_name(self, idx=None, reverse=False,
+                        keywords=False, real_name=False):
         """Returns the name of the first token with a name"""
 
         tokens = self.tokens[idx:] if idx else self.tokens
@@ -681,7 +684,8 @@ class Function(NameAliasMixin, TokenList):
         for token in parenthesis.tokens:
             if isinstance(token, IdentifierList):
                 return token.get_identifiers()
-            elif imt(token, i=(Function, Identifier, TypedLiteral), t=T.Literal):
+            elif imt(token, i=(Function, Identifier, TypedLiteral),
+                     t=T.Literal):
                 result.append(token)
         return result
 

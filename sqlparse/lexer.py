@@ -81,7 +81,9 @@ class Lexer:
     def set_SQL_REGEX(self, SQL_REGEX):
         """Set the list of regex that will parse the SQL."""
         FLAGS = re.IGNORECASE | re.UNICODE
-        self._SQL_REGEX = [(re.compile(rx, FLAGS).match, tt) for rx, tt in SQL_REGEX]
+        self._SQL_REGEX = [
+            (re.compile(rx, FLAGS).match, tt) for rx, tt in SQL_REGEX
+        ]
 
     def add_keywords(self, keywords):
         """Add keyword dictionaries. Keywords are looked up in the same order
@@ -129,7 +131,8 @@ class Lexer:
                     text = text.decode("unicode-escape")
         else:
             raise TypeError(
-                "Expected text or file-like object, got {!r}".format(type(text))
+                "Expected text or file-like object, got {!r}".format(
+                    type(text))
             )
 
         iterable = enumerate(text)
