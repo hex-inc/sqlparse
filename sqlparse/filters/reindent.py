@@ -26,15 +26,18 @@ class ReindentFilter:
         self._last_stmt = None
         self._last_func = None
 
-    def _reverse_leaves_before(self, target_leaf):
+    def _reverse_leaves_before(self, target_leaf, _parent_idx=None):
         """Yield leaf token values in reverse order before target_leaf."""
         current = target_leaf
         while current is not self._curr_stmt and current.parent is not None:
             parent = current.parent
-            try:
-                idx = parent.tokens.index(current)
-            except ValueError:
-                break
+            if _parent_idx is not None and parent is _parent_idx[0]:
+                idx = _parent_idx[1]
+            else:
+                try:
+                    idx = parent.tokens.index(current)
+                except ValueError:
+                    break
             for i in range(idx - 1, -1, -1):
                 sibling = parent.tokens[i]
                 if sibling.is_group:
@@ -56,12 +59,12 @@ class ReindentFilter:
     def leading_ws(self):
         return self.offset + self.indent * self.width
 
-    def _get_offset(self, token):
+    def _get_offset(self, token, _parent_idx=None):
         if token.is_group:
             token = next(token.flatten())
 
         column = 0
-        for value in self._reverse_leaves_before(token):
+        for value in self._reverse_leaves_before(token, _parent_idx):
             newline_pos = value.rfind('\n')
             if newline_pos != -1:
                 column += len(value) - newline_pos - 1
@@ -268,17 +271,21 @@ class ReindentFilter:
         tlist.insert_before(0, self.nl())
         tidx, token = tlist.token_next_by(i=sql.Parenthesis)
         first_token = token
+
+        # Hoist loop-invariant offset for comma_first mode
+        if self.comma_first and first_token:
+            cf_offset = self._get_offset(first_token) - 2
+
         while token:
             ptidx, ptoken = tlist.token_next_by(m=(T.Punctuation, ','),
                                                 idx=tidx)
             if ptoken:
                 if self.comma_first:
-                    adjust = -2
-                    offset = self._get_offset(first_token) + adjust
-                    tlist.insert_before(ptoken, self.nl(offset))
+                    tlist.insert_before(ptidx, self.nl(cf_offset))
                 else:
-                    tlist.insert_after(ptoken,
-                                       self.nl(self._get_offset(token)))
+                    nl_offset = self._get_offset(
+                        token, _parent_idx=(tlist, tidx))
+                    tlist.insert_after(ptidx, self.nl(nl_offset))
             tidx, token = tlist.token_next_by(i=sql.Parenthesis, idx=tidx)
 
     def _process_default(self, tlist, stmts=True):
