@@ -290,11 +290,11 @@ class TokenList(Token):
         ignored too.
         """
 
-        # this on is inconsistent, using Comment instead of T.Comment...
         def matcher(tk):
             return not (
                 (skip_ws and tk.is_whitespace)
-                or (skip_cm and imt(tk, t=T.Comment, i=Comment))
+                or (skip_cm and (isinstance(tk, Comment)
+                                 or tk.ttype in T.Comment))
             )
 
         return self._token_matching(matcher)[1]
@@ -335,7 +335,8 @@ class TokenList(Token):
         def matcher(tk):
             return not (
                 (skip_ws and tk.is_whitespace)
-                or (skip_cm and imt(tk, t=T.Comment, i=Comment))
+                or (skip_cm and (isinstance(tk, Comment)
+                                 or tk.ttype in T.Comment))
             )
 
         return self._token_matching(matcher, idx, reverse=_reverse)

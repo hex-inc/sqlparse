@@ -7,7 +7,7 @@
 
 from sqlparse import sql
 from sqlparse import tokens as T
-from sqlparse.utils import recurse, imt
+from sqlparse.utils import recurse
 
 T_NUMERICAL = (T.Number, T.Number.Integer, T.Number.Float)
 T_STRING = (T.String, T.String.Single, T.String.Symbol)
@@ -106,7 +106,7 @@ def group_typed_literal(tlist):
     # https://www.postgresql.org/docs/9.1/datatype-datetime.html
     # https://www.postgresql.org/docs/9.1/functions-datetime.html
     def match(token):
-        return imt(token, m=sql.TypedLiteral.M_OPEN)
+        return any(token.match(*pattern) for pattern in sql.TypedLiteral.M_OPEN)
 
     def match_to_extend(token):
         return isinstance(token, sql.TypedLiteral)
@@ -139,9 +139,8 @@ def group_period(tlist):
         return False
 
     def valid_prev(token):
-        sqlcls = sql.SquareBrackets, sql.Identifier
-        ttypes = T.Name, T.String.Symbol
-        return imt(token, i=sqlcls, t=ttypes)
+        return (isinstance(token, (sql.SquareBrackets, sql.Identifier))
+                or token.ttype in (T.Name, T.String.Symbol))
 
     def valid_next(token):
         # issue261, allow invalid next token
@@ -149,10 +148,11 @@ def group_period(tlist):
 
     def post(tlist, pidx, tidx, nidx):
         # next_ validation is being performed here. issue261
-        sqlcls = sql.SquareBrackets, sql.Function
-        ttypes = T.Name, T.String.Symbol, T.Wildcard, T.String.Single
         next_ = tlist[nidx] if nidx is not None else None
-        valid_next = imt(next_, i=sqlcls, t=ttypes)
+        valid_next = (next_ is not None
+                      and (isinstance(next_, (sql.SquareBrackets, sql.Function))
+                           or next_.ttype in (T.Name, T.String.Symbol,
+                                              T.Wildcard, T.String.Single)))
 
         return (pidx, nidx) if valid_next else (pidx, tidx)
 
@@ -167,8 +167,7 @@ def group_as(tlist):
         return token.normalized == 'NULL' or not token.is_keyword
 
     def valid_next(token):
-        ttypes = T.DML, T.DDL, T.CTE
-        return not imt(token, t=ttypes) and token is not None
+        return token is not None and token.ttype not in (T.DML, T.DDL, T.CTE)
 
     def post(tlist, pidx, tidx, nidx):
         return pidx, nidx
@@ -202,12 +201,13 @@ def group_comparison(tlist):
         return token.ttype == T.Operator.Comparison
 
     def valid(token):
-        if imt(token, t=ttypes, i=sqlcls):
-            return True
-        elif token and token.is_keyword and token.normalized == 'NULL':
-            return True
-        else:
+        if token is None:
             return False
+        if isinstance(token, sqlcls) or token.ttype in ttypes:
+            return True
+        if token.is_keyword and token.normalized == 'NULL':
+            return True
+        return False
 
     def post(tlist, pidx, tidx, nidx):
         return pidx, nidx
@@ -232,7 +232,9 @@ def group_over(tlist):
     tidx, token = tlist.token_next_by(m=sql.Over.M_OPEN)
     while token:
         nidx, next_ = tlist.token_next(tidx)
-        if imt(next_, i=sql.Parenthesis, t=T.Name):
+        if (next_ is not None
+                and (isinstance(next_, sql.Parenthesis)
+                     or next_.ttype in T.Name)):
             tlist.group_tokens(sql.Over, tidx, nidx)
         tidx, token = tlist.token_next_by(m=sql.Over.M_OPEN, idx=tidx)
 
@@ -245,7 +247,7 @@ def group_arrays(tlist):
         return isinstance(token, sql.SquareBrackets)
 
     def valid_prev(token):
-        return imt(token, i=sqlcls, t=ttypes)
+        return isinstance(token, sqlcls) or token.ttype in ttypes
 
     def valid_next(token):
         return True
@@ -263,13 +265,16 @@ def group_operator(tlist):
               sql.Identifier, sql.Operation, sql.TypedLiteral)
 
     def match(token):
-        return imt(token, t=(T.Operator, T.Wildcard))
+        return token.ttype in (T.Operator, T.Wildcard)
 
     def valid(token):
-        return imt(token, i=sqlcls, t=ttypes) \
-            or (token and token.match(
-                T.Keyword,
-                ('CURRENT_DATE', 'CURRENT_TIME', 'CURRENT_TIMESTAMP')))
+        if token is None:
+            return False
+        return (isinstance(token, sqlcls)
+                or token.ttype in ttypes
+                or token.match(
+                    T.Keyword,
+                    ('CURRENT_DATE', 'CURRENT_TIME', 'CURRENT_TIMESTAMP')))
 
     def post(tlist, pidx, tidx, nidx):
         tlist[tidx].ttype = T.Operator
@@ -291,7 +296,11 @@ def group_identifier_list(tlist):
         return token.match(T.Punctuation, ',')
 
     def valid(token):
-        return imt(token, i=sqlcls, m=m_role, t=ttypes)
+        if token is None:
+            return False
+        return (isinstance(token, sqlcls)
+                or token.match(*m_role)
+                or token.ttype in ttypes)
 
     def post(tlist, pidx, tidx, nidx):
         return pidx, nidx
@@ -306,7 +315,7 @@ def group_comments(tlist):
     tidx, token = tlist.token_next_by(t=T.Comment)
     while token:
         eidx, end = tlist.token_not_matching(
-            lambda tk: imt(tk, t=T.Comment) or tk.is_newline, idx=tidx)
+            lambda tk: tk.ttype in T.Comment or tk.is_newline, idx=tidx)
         if end is not None:
             eidx, end = tlist.token_prev(eidx, skip_ws=False)
             tlist.group_tokens(sql.Comment, tidx, eidx)
@@ -380,7 +389,9 @@ def group_order(tlist):
     tidx, token = tlist.token_next_by(t=T.Keyword.Order)
     while token:
         pidx, prev_ = tlist.token_prev(tidx)
-        if imt(prev_, i=sql.Identifier, t=T.Number):
+        if (prev_ is not None
+                and (isinstance(prev_, sql.Identifier)
+                     or prev_.ttype in T.Number)):
             tlist.group_tokens(sql.Identifier, pidx, tidx)
             tidx = pidx
         tidx, token = tlist.token_next_by(t=T.Keyword.Order, idx=tidx)
