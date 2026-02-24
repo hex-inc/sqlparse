@@ -170,8 +170,9 @@ class TokenList(Token):
 
     def __init__(self, tokens=None):
         self.tokens = tokens or []
-        [setattr(token, "parent", self) for token in self.tokens]
-        super().__init__(None, str(self))
+        for token in self.tokens:
+            token.parent = self
+        super().__init__(None, '')
         self.is_group = True
         if (
             len(self.tokens) > 0
@@ -183,8 +184,16 @@ class TokenList(Token):
                 self.tokens[-1].position - self.tokens[0].position
             ) + self.tokens[-1].length
 
-    def __str__(self):
+    @property
+    def value(self):
         return "".join(token.value for token in self.flatten())
+
+    @value.setter
+    def value(self, val):
+        pass  # value is computed from children
+
+    def __str__(self):
+        return self.value
 
     # weird bug
     # def __len__(self):
@@ -407,7 +416,7 @@ class TokenList(Token):
         """
         dot_idx, _ = self.token_next_by(m=(T.Punctuation, "."))
         _, prev_ = self.token_prev(dot_idx)
-        return remove_quotes(prev_.value) if prev_ is not None else None
+        return remove_quotes(str(prev_)) if prev_ is not None else None
 
     def _get_first_name(self, idx=None, reverse=False,
                         keywords=False, real_name=False):
@@ -494,7 +503,7 @@ class Identifier(NameAliasMixin, TokenList):
         """Returns the typecast or ``None`` of this object as a string."""
         midx, marker = self.token_next_by(m=(T.Punctuation, "::"))
         nidx, next_ = self.token_next(midx, skip_ws=False)
-        return next_.value if next_ else None
+        return str(next_) if next_ else None
 
     def get_ordering(self):
         """Returns the ordering or ``None`` as uppercase string."""

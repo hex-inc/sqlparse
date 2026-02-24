@@ -198,7 +198,7 @@ class ReindentFilter:
                 shift = 0
                 for token in identifiers:
                     # Add 1 for the "," separator
-                    position += len(token.value) + 1
+                    position += len(str(token)) + 1
                     if position > (self.wrap_after - self.offset):
                         adjust = 0
                         tidx = token_to_idx[id(token)] + shift
@@ -241,12 +241,12 @@ class ReindentFilter:
                             adj_i, sql.Token(T.Whitespace, ' '))
                         ws_shift += 1
 
-            end_at = self.offset + sum(len(i.value) + 1 for i in identifiers)
+            end_at = self.offset + sum(len(str(i)) + 1 for i in identifiers)
             adjusted_offset = 0
             if (self.wrap_after > 0
                     and end_at > (self.wrap_after - self.offset)
                     and self._last_func):
-                adjusted_offset = -len(self._last_func.value) - 1
+                adjusted_offset = -len(str(self._last_func)) - 1
 
             # Rebuild index mapping after whitespace insertions
             token_to_idx = {id(t): i
@@ -260,7 +260,7 @@ class ReindentFilter:
                 position = 0
                 for token in identifiers:
                     # Add 1 for the "," separator
-                    position += len(token.value) + 1
+                    position += len(str(token)) + 1
                     if (self.wrap_after > 0
                             and position > (self.wrap_after - self.offset)):
                         tidx = token_to_idx[id(token)] + shift

@@ -358,11 +358,13 @@ def group_functions(tlist):
     has_table = False
     has_as = False
     for tmp_token in tlist.tokens:
-        if tmp_token.value.upper() == 'CREATE':
+        val = str(tmp_token)
+        val_upper = val.upper()
+        if val_upper == 'CREATE':
             has_create = True
-        if tmp_token.value.upper() == 'TABLE':
+        if val_upper == 'TABLE':
             has_table = True
-        if tmp_token.value == 'AS':
+        if val == 'AS':
             has_as = True
     if has_create and has_table and not has_as:
         return
