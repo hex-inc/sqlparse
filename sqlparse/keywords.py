@@ -77,7 +77,8 @@ SQL_REGEX = [
     (r"HANDLER\s+FOR\b", tokens.Keyword),
     (r"GO(\s\d+)\b", tokens.Keyword),
     (
-        r"(LATERAL\s+VIEW\s+)" r"(EXPLODE|INLINE|PARSE_URL_TUPLE|POSEXPLODE|STACK)\b",
+        r"(LATERAL\s+VIEW\s+)"
+        r"(EXPLODE|INLINE|PARSE_URL_TUPLE|POSEXPLODE|STACK)\b",
         tokens.Keyword,
     ),
     (r"(AT|WITH')\s+TIME\s+ZONE\s+'[^']+'", tokens.Keyword.TZCast),
