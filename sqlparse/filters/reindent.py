@@ -95,34 +95,60 @@ class ReindentFilter:
         return tidx, token
 
     def _split_kwds(self, tlist):
+        # Pass 1: scan unmodified list for all keyword positions
+        inserts = {}   # idx -> token to insert before
+        deletes = set()
+
         tidx, token = self._next_token(tlist)
         while token:
             pidx, prev_ = tlist.token_prev(tidx, skip_ws=False)
             uprev = str(prev_)
 
             if prev_ and prev_.is_whitespace:
-                del tlist.tokens[pidx]
-                tidx -= 1
+                deletes.add(pidx)
 
             if not (uprev.endswith('\n') or uprev.endswith('\r')):
-                tlist.insert_before(tidx, self.nl())
-                tidx += 1
+                inserts[tidx] = self.nl()
 
             tidx, token = self._next_token(tlist, tidx)
 
+        # Pass 2: rebuild token list in O(n)
+        if inserts or deletes:
+            new_tokens = []
+            for i, tok in enumerate(tlist.tokens):
+                if i in inserts:
+                    nl_tok = inserts[i]
+                    nl_tok.parent = tlist
+                    new_tokens.append(nl_tok)
+                if i not in deletes:
+                    new_tokens.append(tok)
+            tlist.tokens = new_tokens
+
     def _split_statements(self, tlist):
         ttypes = T.Keyword.DML, T.Keyword.DDL
+        inserts = {}
+        deletes = set()
+
         tidx, token = tlist.token_next_by(t=ttypes)
         while token:
             pidx, prev_ = tlist.token_prev(tidx, skip_ws=False)
             if prev_ and prev_.is_whitespace:
-                del tlist.tokens[pidx]
-                tidx -= 1
+                deletes.add(pidx)
             # only break if it's not the first token
-            if prev_:
-                tlist.insert_before(tidx, self.nl())
-                tidx += 1
+            if prev_ is not None:
+                inserts[tidx] = self.nl()
             tidx, token = tlist.token_next_by(t=ttypes, idx=tidx)
+
+        if inserts or deletes:
+            new_tokens = []
+            for i, tok in enumerate(tlist.tokens):
+                if i in inserts:
+                    nl_tok = inserts[i]
+                    nl_tok.parent = tlist
+                    new_tokens.append(nl_tok)
+                if i not in deletes:
+                    new_tokens.append(tok)
+            tlist.tokens = new_tokens
 
     def _process(self, tlist):
         func_name = f'_process_{type(tlist).__name__}'
@@ -173,7 +199,7 @@ class ReindentFilter:
                 shift = 0
                 for token in identifiers:
                     # Add 1 for the "," separator
-                    position += len(token.value) + 1
+                    position += len(str(token)) + 1
                     if position > (self.wrap_after - self.offset):
                         adjust = 0
                         tidx = token_to_idx[id(token)] + shift
@@ -216,12 +242,12 @@ class ReindentFilter:
                             adj_i, sql.Token(T.Whitespace, ' '))
                         ws_shift += 1
 
-            end_at = self.offset + sum(len(i.value) + 1 for i in identifiers)
+            end_at = self.offset + sum(len(str(i)) + 1 for i in identifiers)
             adjusted_offset = 0
             if (self.wrap_after > 0
                     and end_at > (self.wrap_after - self.offset)
                     and self._last_func):
-                adjusted_offset = -len(self._last_func.value) - 1
+                adjusted_offset = -len(str(self._last_func)) - 1
 
             # Rebuild index mapping after whitespace insertions
             token_to_idx = {id(t): i
@@ -235,7 +261,7 @@ class ReindentFilter:
                 position = 0
                 for token in identifiers:
                     # Add 1 for the "," separator
-                    position += len(token.value) + 1
+                    position += len(str(token)) + 1
                     if (self.wrap_after > 0
                             and position > (self.wrap_after - self.offset)):
                         tidx = token_to_idx[id(token)] + shift

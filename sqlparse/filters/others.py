@@ -74,7 +74,8 @@ class StripCommentsFilter:
             tidx, token = get_next_comment(idx=tidx)
 
     def process(self, stmt):
-        [self.process(sgroup) for sgroup in stmt.get_sublists()]
+        [self.process(sgroup) for sgroup in stmt.get_sublists()
+         if not isinstance(sgroup, sql.Comment)]
         StripCommentsFilter._process(stmt)
         return stmt
 

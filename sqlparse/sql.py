@@ -170,8 +170,9 @@ class TokenList(Token):
 
     def __init__(self, tokens=None):
         self.tokens = tokens or []
-        [setattr(token, "parent", self) for token in self.tokens]
-        super().__init__(None, str(self))
+        for token in self.tokens:
+            token.parent = self
+        super().__init__(None, '')
         self.is_group = True
         if (
             len(self.tokens) > 0
@@ -183,8 +184,16 @@ class TokenList(Token):
                 self.tokens[-1].position - self.tokens[0].position
             ) + self.tokens[-1].length
 
-    def __str__(self):
+    @property
+    def value(self):
         return "".join(token.value for token in self.flatten())
+
+    @value.setter
+    def value(self, val):
+        pass  # value is computed from children
+
+    def __str__(self):
+        return self.value
 
     # weird bug
     # def __len__(self):
@@ -231,6 +240,8 @@ class TokenList(Token):
         This method is recursively called for all child tokens.
         """
         for token in self.tokens:
+            if token is None:
+                continue
             if token.is_group:
                 yield from token.flatten()
             else:
@@ -238,7 +249,7 @@ class TokenList(Token):
 
     def get_sublists(self):
         for token in self.tokens:
-            if token.is_group:
+            if token is not None and token.is_group:
                 yield token
 
     @property
@@ -262,6 +273,8 @@ class TokenList(Token):
             indexes = range(start, end)
         for idx in indexes:
             token = self.tokens[idx]
+            if token is None:
+                continue
             for func in funcs:
                 if func(token):
                     return idx, token
@@ -277,11 +290,11 @@ class TokenList(Token):
         ignored too.
         """
 
-        # this on is inconsistent, using Comment instead of T.Comment...
         def matcher(tk):
             return not (
                 (skip_ws and tk.is_whitespace)
-                or (skip_cm and imt(tk, t=T.Comment, i=Comment))
+                or (skip_cm and (isinstance(tk, Comment)
+                                 or tk.ttype in T.Comment))
             )
 
         return self._token_matching(matcher)[1]
@@ -322,7 +335,8 @@ class TokenList(Token):
         def matcher(tk):
             return not (
                 (skip_ws and tk.is_whitespace)
-                or (skip_cm and imt(tk, t=T.Comment, i=Comment))
+                or (skip_cm and (isinstance(tk, Comment)
+                                 or tk.ttype in T.Comment))
             )
 
         return self._token_matching(matcher, idx, reverse=_reverse)
@@ -336,30 +350,39 @@ class TokenList(Token):
                      include_end=True, extend=False):
         """Replace tokens by an instance of *grp_cls*."""
         start_idx = start
-        start = self.tokens[start_idx]
+        start_token = self.tokens[start_idx]
 
         end_idx = end + include_end
 
-        # will be needed later for new group_clauses
-        # while skip_ws and tokens and tokens[-1].is_whitespace:
-        #     tokens = tokens[:-1]
-
-        if extend and isinstance(start, grp_cls):
-            subtokens = self.tokens[start_idx + 1:end_idx]
-
-            grp = start
+        if extend and isinstance(start_token, grp_cls):
+            # Scan backwards: non-None tokens are at end of range
+            subtokens = []
+            for i in range(end_idx - 1, start_idx, -1):
+                t = self.tokens[i]
+                if t is None:
+                    break
+                subtokens.append(t)
+                self.tokens[i] = None
+            subtokens.reverse()
+            grp = start_token
             grp.tokens.extend(subtokens)
-            del self.tokens[start_idx + 1:end_idx]
         else:
-            subtokens = self.tokens[start_idx:end_idx]
+            subtokens = [t for t in self.tokens[start_idx:end_idx]
+                         if t is not None]
             grp = grp_cls(subtokens)
-            self.tokens[start_idx:end_idx] = [grp]
+            self.tokens[start_idx] = grp
+            for i in range(start_idx + 1, end_idx):
+                self.tokens[i] = None
             grp.parent = self
 
         for token in subtokens:
             token.parent = grp
 
         return grp
+
+    def _compact_tokens(self):
+        """Remove None sentinels left by deferred group_tokens."""
+        self.tokens = [t for t in self.tokens if t is not None]
 
     def insert_before(self, where, token):
         """Inserts *token* before *where*."""
@@ -407,7 +430,7 @@ class TokenList(Token):
         """
         dot_idx, _ = self.token_next_by(m=(T.Punctuation, "."))
         _, prev_ = self.token_prev(dot_idx)
-        return remove_quotes(prev_.value) if prev_ is not None else None
+        return remove_quotes(str(prev_)) if prev_ is not None else None
 
     def _get_first_name(self, idx=None, reverse=False,
                         keywords=False, real_name=False):
@@ -494,7 +517,7 @@ class Identifier(NameAliasMixin, TokenList):
         """Returns the typecast or ``None`` of this object as a string."""
         midx, marker = self.token_next_by(m=(T.Punctuation, "::"))
         nidx, next_ = self.token_next(midx, skip_ws=False)
-        return next_.value if next_ else None
+        return str(next_) if next_ else None
 
     def get_ordering(self):
         """Returns the ordering or ``None`` as uppercase string."""

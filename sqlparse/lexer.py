@@ -17,7 +17,6 @@ from threading import Lock
 from io import TextIOBase
 
 from sqlparse import tokens, keywords
-from sqlparse.utils import consume
 
 
 class Lexer:
@@ -81,6 +80,29 @@ class Lexer:
     def set_SQL_REGEX(self, SQL_REGEX):
         """Set the list of regex that will parse the SQL."""
         FLAGS = re.IGNORECASE | re.UNICODE
+
+        # Build combined alternation regex for single-pass tokenization.
+        # The dollar-quoted string pattern uses a backreference (\1) which
+        # breaks in a combined alternation, so it's handled separately.
+        self._dollar_quote_re = None
+        self._dollar_quote_action = None
+
+        combined_parts = []
+        actions = []
+        group_idx = 0
+        for rx, action in SQL_REGEX:
+            if r'\1' in rx or r'\2' in rx:
+                self._dollar_quote_re = re.compile(rx, FLAGS)
+                self._dollar_quote_action = action
+                continue
+            combined_parts.append(f'(?P<g{group_idx}>{rx})')
+            actions.append(action)
+            group_idx += 1
+
+        self._combined_re = re.compile('|'.join(combined_parts), FLAGS)
+        self._actions = actions
+
+        # Keep legacy list for external code that accesses _SQL_REGEX
         self._SQL_REGEX = [
             (re.compile(rx, FLAGS).match, tt) for rx, tt in SQL_REGEX
         ]
@@ -135,22 +157,41 @@ class Lexer:
                     type(text))
             )
 
-        iterable = enumerate(text)
-        for pos, char in iterable:
-            for rexmatch, action in self._SQL_REGEX:
-                m = rexmatch(text, pos)
+        combined_re = self._combined_re
+        actions = self._actions
+        dollar_re = self._dollar_quote_re
+        dollar_action = self._dollar_quote_action
+        text_len = len(text)
+        _PROCESS_AS_KEYWORD = keywords.PROCESS_AS_KEYWORD
+        _TokenType = tokens._TokenType
+        is_keyword = self.is_keyword
+        pos = 0
 
-                if not m:
+        while pos < text_len:
+            # Dollar-quoted strings: backreference pattern handled separately
+            if dollar_re is not None and text[pos] == '$':
+                m = dollar_re.match(text, pos)
+                if m:
+                    yield dollar_action, m.group(), pos
+                    pos = m.end()
                     continue
-                elif isinstance(action, tokens._TokenType):
-                    yield action, m.group(), pos
-                elif action is keywords.PROCESS_AS_KEYWORD:
-                    yield (*self.is_keyword(m.group()), pos)
 
-                consume(iterable, m.end() - pos - 1)
-                break
-            else:
-                yield tokens.Error, char, pos
+            m = combined_re.match(text, pos)
+            if m is None:
+                yield tokens.Error, text[pos], pos
+                pos += 1
+                continue
+
+            idx = int(m.lastgroup[1:])  # 'g12' -> 12
+            action = actions[idx]
+            value = m.group()
+
+            if isinstance(action, _TokenType):
+                yield action, value, pos
+            elif action is _PROCESS_AS_KEYWORD:
+                yield (*is_keyword(value), pos)
+
+            pos = m.end()
 
 
 def tokenize(sql, encoding=None):
