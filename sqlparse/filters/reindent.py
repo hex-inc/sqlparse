@@ -26,13 +26,14 @@ class ReindentFilter:
         self._last_stmt = None
         self._last_func = None
 
-    def _reverse_leaves_before(self, target_leaf, _parent_idx=None):
+    def _reverse_leaves_before(self, target_leaf, known_parent_and_idx=None):
         """Yield leaf token values in reverse order before target_leaf."""
         current = target_leaf
         while current is not self._curr_stmt and current.parent is not None:
             parent = current.parent
-            if _parent_idx is not None and parent is _parent_idx[0]:
-                idx = _parent_idx[1]
+            if known_parent_and_idx is not None \
+                    and parent is known_parent_and_idx[0]:
+                idx = known_parent_and_idx[1]
             else:
                 try:
                     idx = parent.tokens.index(current)
@@ -59,12 +60,12 @@ class ReindentFilter:
     def leading_ws(self):
         return self.offset + self.indent * self.width
 
-    def _get_offset(self, token, _parent_idx=None):
+    def _get_offset(self, token, known_parent_and_idx=None):
         if token.is_group:
             token = next(token.flatten())
 
         column = 0
-        for value in self._reverse_leaves_before(token, _parent_idx):
+        for value in self._reverse_leaves_before(token, known_parent_and_idx):
             newline_pos = value.rfind('\n')
             if newline_pos != -1:
                 column += len(value) - newline_pos - 1
@@ -272,7 +273,6 @@ class ReindentFilter:
         tidx, token = tlist.token_next_by(i=sql.Parenthesis)
         first_token = token
 
-        # Hoist loop-invariant offset for comma_first mode
         if self.comma_first and first_token:
             cf_offset = self._get_offset(first_token) - 2
 
@@ -284,7 +284,7 @@ class ReindentFilter:
                     tlist.insert_before(ptidx, self.nl(cf_offset))
                 else:
                     nl_offset = self._get_offset(
-                        token, _parent_idx=(tlist, tidx))
+                        token, known_parent_and_idx=(tlist, tidx))
                     tlist.insert_after(ptidx, self.nl(nl_offset))
             tidx, token = tlist.token_next_by(i=sql.Parenthesis, idx=tidx)
 
